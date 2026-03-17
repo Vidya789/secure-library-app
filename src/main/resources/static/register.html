@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Secure Library App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-wrapper">
+    <div class="container">
+        <div class="app-title">Secure Library App</div>
+        <div class="page-subtitle">Create New Account</div>
+
+        <form id="registerForm">
+            <label for="username">Username</label>
+            <input id="username" type="text" required minlength="3">
+
+            <label for="password">Password</label>
+            <input id="password" type="password" required minlength="6">
+
+            <button type="submit">Register</button>
+        </form>
+
+        <p id="message"></p>
+
+        <div class="menu">
+            <a class="btn" href="index.html">Home</a>
+            <a class="btn" href="login.html">Login</a>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    document.getElementById("registerForm").addEventListener("submit", registerUser);
+</script>
+</body>
+</html>

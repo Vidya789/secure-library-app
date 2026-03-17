@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Secure Library App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-wrapper">
+    <div class="container">
+        <div class="app-title">Secure Library App</div>
+        <div class="page-subtitle">Admin Dashboard</div>
+
+        <form id="bookForm">
+            <input type="hidden" id="bookId">
+
+            <label for="title">Title</label>
+            <input id="title" type="text" required minlength="2">
+
+            <label for="author">Author</label>
+            <input id="author" type="text" required minlength="2">
+
+            <label for="category">Category</label>
+            <input id="category" type="text" required minlength="2">
+
+            <button type="submit">Save Book</button>
+        </form>
+
+        <p id="message"></p>
+
+        <h3 class="section-title">Manage Books</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="adminBooksTableBody"></tbody>
+        </table>
+
+        <h3 class="section-title">Borrow Requests</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Request ID</th>
+                <th>User ID</th>
+                <th>Book ID</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="borrowRequestsTableBody"></tbody>
+        </table>
+
+        <div class="menu">
+            <a class="btn" href="index.html">Home</a>
+            <a class="btn" href="books.html">Books</a>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    document.getElementById("bookForm").addEventListener("submit", saveBook);
+
+    async function loadAdminBooks() {
+        const message = document.getElementById("message");
+        const tableBody = document.getElementById("adminBooksTableBody");
+        tableBody.innerHTML = "";
+        message.textContent = "";
+
+        try {
+            const response = await fetch("/books", {
+                method: "GET",
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error("Could not load books.");
+            }
+
+            const books = await response.json();
+
+            books.forEach(book => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${book.id ?? ""}</td>
+                    <td>${escapeHtml(book.title ?? "")}</td>
+                    <td>${escapeHtml(book.author ?? "")}</td>
+                    <td>${escapeHtml(book.category ?? "")}</td>
+                    <td>
+                        <button onclick="editBook(${book.id}, '${jsEscape(book.title)}', '${jsEscape(book.author)}', '${jsEscape(book.category)}')">Edit</button>
+                        <button onclick="deleteBook(${book.id})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    async function loadBorrowRequests() {
+        const tableBody = document.getElementById("borrowRequestsTableBody");
+        tableBody.innerHTML = "";
+
+        try {
+            const response = await fetch("/borrow/all", {
+                method: "GET",
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error("Could not load borrow requests.");
+            }
+
+            const requests = await response.json();
+
+            if (requests.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='5'>No borrow requests found.</td></tr>";
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${request.id ?? ""}</td>
+                    <td>${request.userId ?? ""}</td>
+                    <td>${request.bookId ?? ""}</td>
+                    <td>${escapeHtml(request.status ?? "")}</td>
+                    <td>
+                        <button onclick="approveRequest(${request.id})">Approve</button>
+                        <button onclick="rejectRequest(${request.id})">Reject</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            tableBody.innerHTML = "<tr><td colspan='5'>Could not load requests.</td></tr>";
+        }
+    }
+
+    function editBook(id, title, author, category) {
+        document.getElementById("bookId").value = id;
+        document.getElementById("title").value = title;
+        document.getElementById("author").value = author;
+        document.getElementById("category").value = category;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function saveBook(event) {
+        event.preventDefault();
+
+        const id = document.getElementById("bookId").value;
+        const title = document.getElementById("title").value.trim();
+        const author = document.getElementById("author").value.trim();
+        const category = document.getElementById("category").value.trim();
+        const message = document.getElementById("message");
+
+        message.textContent = "";
+
+        if (title.length < 2 || author.length < 2 || category.length < 2) {
+            message.style.color = "#b91c1c";
+            message.textContent = "All fields must be at least 2 characters.";
+            return;
+        }
+
+        const url = id ? `/books/${id}` : "/books";
+        const method = id ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ title, author, category })
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Could not save book.");
+            }
+
+            message.style.color = "green";
+            message.textContent = id ? "Book updated successfully." : "Book added successfully.";
+
+            document.getElementById("bookForm").reset();
+            document.getElementById("bookId").value = "";
+
+            loadAdminBooks();
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    async function deleteBook(id) {
+        const message = document.getElementById("message");
+
+        if (!confirm("Are you sure you want to delete this book?")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/books/${id}`, {
+                method: "DELETE",
+                headers: getAuthHeaders()
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Could not delete book.");
+            }
+
+            message.style.color = "green";
+            message.textContent = text || "Book deleted successfully.";
+
+            loadAdminBooks();
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    async function approveRequest(id) {
+        await updateRequestStatus(id, "approve");
+    }
+
+    async function rejectRequest(id) {
+        await updateRequestStatus(id, "reject");
+    }
+
+    async function updateRequestStatus(id, action) {
+        const message = document.getElementById("message");
+
+        try {
+            const response = await fetch(`/borrow/${id}/${action}`, {
+                method: "PUT",
+                headers: getAuthHeaders()
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || `Could not ${action} request.`);
+            }
+
+            message.style.color = "green";
+            message.textContent = text || `Request ${action}d successfully.`;
+
+            loadBorrowRequests();
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    loadAdminBooks();
+    loadBorrowRequests();
+</script>
+</body>
+</html>

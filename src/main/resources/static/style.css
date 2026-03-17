@@ -1,0 +1,161 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 0;
+}
+
+.page-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 92%;
+    max-width: 1000px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.app-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1e3a8a;
+    margin-bottom: 8px;
+}
+
+.page-subtitle {
+    color: #444;
+    margin-bottom: 24px;
+}
+
+h1, h2, h3 {
+    color: #222;
+    margin-top: 0;
+}
+
+form {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto 24px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+}
+
+label {
+    font-weight: bold;
+}
+
+input, button {
+    padding: 11px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button, .btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    text-decoration: none;
+    padding: 11px 16px;
+    cursor: pointer;
+    display: inline-block;
+    border-radius: 8px;
+    min-width: 120px;
+    text-align: center;
+}
+
+button:hover, .btn:hover {
+    background: #1d4ed8;
+}
+
+.menu, .top-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 18px 0;
+}
+
+.top-bar input {
+    min-width: 260px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    vertical-align: top;
+}
+
+#message {
+    font-weight: bold;
+    margin: 12px 0;
+    text-align: center;
+}
+
+.section-title {
+    margin-top: 24px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+    }
+
+    .app-title {
+        font-size: 26px;
+    }
+
+    .top-bar {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .top-bar input {
+        width: 100%;
+        min-width: unset;
+    }
+}

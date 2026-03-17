@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books - Secure Library App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page-wrapper">
+    <div class="container">
+        <div class="app-title">Secure Library App</div>
+        <div class="page-subtitle">Browse and Borrow Books</div>
+
+        <div class="top-bar">
+            <input type="text" id="searchInput" placeholder="Search by title or category">
+            <button onclick="searchBooks()">Search</button>
+            <button onclick="loadBooks()">Reload</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <p id="message"></p>
+
+        <h3 class="section-title">Available Books</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="booksTableBody"></tbody>
+        </table>
+
+        <h3 class="section-title">My Borrow Requests</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Request ID</th>
+                <th>Book ID</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="myRequestsTableBody"></tbody>
+        </table>
+
+        <div class="menu">
+            <a class="btn" href="index.html">Home</a>
+            <a class="btn" href="admin.html">Admin Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    async function loadBooks() {
+        const message = document.getElementById("message");
+        const tableBody = document.getElementById("booksTableBody");
+        tableBody.innerHTML = "";
+        message.textContent = "";
+
+        try {
+            const response = await fetch("/books", {
+                method: "GET",
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to load books. Please login first.");
+            }
+
+            const books = await response.json();
+            renderBooks(books);
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    function renderBooks(books) {
+        const tableBody = document.getElementById("booksTableBody");
+        tableBody.innerHTML = "";
+
+        if (books.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='5'>No books found.</td></tr>";
+            return;
+        }
+
+        books.forEach(book => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${book.id ?? ""}</td>
+                <td>${escapeHtml(book.title ?? "")}</td>
+                <td>${escapeHtml(book.author ?? "")}</td>
+                <td>${escapeHtml(book.category ?? "")}</td>
+                <td><button onclick="borrowBook(${book.id})">Borrow</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    async function searchBooks() {
+        const keyword = document.getElementById("searchInput").value.trim();
+        const message = document.getElementById("message");
+        const tableBody = document.getElementById("booksTableBody");
+        tableBody.innerHTML = "";
+        message.textContent = "";
+
+        if (!keyword) {
+            loadBooks();
+            return;
+        }
+
+        try {
+            const response = await fetch(`/books/search?keyword=${encodeURIComponent(keyword)}`, {
+                method: "GET",
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error("Search failed.");
+            }
+
+            const books = await response.json();
+            renderBooks(books);
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    async function loadMyRequests() {
+        const tableBody = document.getElementById("myRequestsTableBody");
+        tableBody.innerHTML = "";
+
+        try {
+            const response = await fetch("/borrow/my", {
+                method: "GET",
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error("Could not load borrow requests.");
+            }
+
+            const requests = await response.json();
+
+            if (requests.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='3'>No borrow requests yet.</td></tr>";
+                return;
+            }
+
+            requests.forEach(request => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${request.id ?? ""}</td>
+                    <td>${request.bookId ?? ""}</td>
+                    <td>${escapeHtml(request.status ?? "")}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            tableBody.innerHTML = "<tr><td colspan='3'>Could not load requests.</td></tr>";
+        }
+    }
+
+    async function borrowBook(bookId) {
+        const message = document.getElementById("message");
+        message.textContent = "";
+
+        try {
+            const response = await fetch(`/borrow/${bookId}`, {
+                method: "POST",
+                headers: getAuthHeaders()
+            });
+
+            const text = await response.text();
+
+            if (!response.ok) {
+                throw new Error(text || "Borrow request failed.");
+            }
+
+            message.style.color = "green";
+            message.textContent = text || "Borrow request submitted successfully.";
+
+            loadMyRequests();
+        } catch (error) {
+            message.style.color = "#b91c1c";
+            message.textContent = error.message;
+        }
+    }
+
+    loadBooks();
+    loadMyRequests();
+</script>
+</body>
+</html>
