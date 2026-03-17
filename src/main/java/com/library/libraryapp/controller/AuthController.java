@@ -1,13 +1,17 @@
 package com.library.libraryapp.controller;
 
 import com.library.libraryapp.model.User;
-import com.library.libraryapp.repository.UserRepository;
+import com.library.libraryapp.repository.UserRepository; // Import is good!
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
+    @Autowired
+    private UserRepository userRepository; // <--- ADD THIS LINE!
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -19,10 +23,9 @@ public class AuthController {
         userRepository.save(user);
         return "User registered securely!";
     }
+
     @PostMapping("/login")
     public String login() {
-        // Spring Security handles the heavy lifting,
-        // reaching this method means the user is already authenticated.
         return "User logged in successfully!";
     }
 }

@@ -1,10 +1,6 @@
-
 package com.library.libraryapp.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class BorrowRequest {
@@ -16,7 +12,10 @@ public class BorrowRequest {
     private Long bookId;
     private String status;
 
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // Add these setters and getters
+    public void setUserId(Long userId) { this.userId = userId; }
+    public void setBookId(Long bookId) { this.bookId = bookId; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getStatus() { return status; }
 }

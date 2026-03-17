@@ -16,13 +16,39 @@ public class BookController {
 
     @GetMapping
     public List<Book> getBooks() {
-        // Now it returns the actual list from the database!
         return bookRepository.findAll();
+    }
+
+    @GetMapping("/search")
+    public List<Book> searchBooks(@RequestParam String keyword) {
+        return bookRepository
+                .findByTitleContainingIgnoreCaseOrCategoryContainingIgnoreCase(keyword, keyword);
     }
 
     @PostMapping
     public Book addBook(@RequestBody Book book) {
-        // This saves the book you send in the request body
         return bookRepository.save(book);
+    }
+
+    @PutMapping("/{id}")
+    public Book updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        book.setTitle(updatedBook.getTitle());
+        book.setAuthor(updatedBook.getAuthor());
+        book.setCategory(updatedBook.getCategory());
+
+        return bookRepository.save(book);
+    }
+
+    @DeleteMapping("/{id}")
+    public String deleteBook(@PathVariable Long id) {
+        if (!bookRepository.existsById(id)) {
+            throw new RuntimeException("Book not found");
+        }
+
+        bookRepository.deleteById(id);
+        return "Book deleted successfully!";
     }
 }
