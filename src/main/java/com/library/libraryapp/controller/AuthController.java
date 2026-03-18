@@ -1,7 +1,12 @@
 package com.library.libraryapp.controller;
 
+import com.library.libraryapp.dto.RegisterRequest;
+import com.library.libraryapp.exception.BadRequestException;
 import com.library.libraryapp.model.User;
-import com.library.libraryapp.repository.UserRepository; // Import is good!
+import com.library.libraryapp.repository.UserRepository;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -10,17 +15,28 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired
-    private UserRepository userRepository; // <--- ADD THIS LINE!
+    private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
-        // SECURE: Hash the password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public String register(@Valid @RequestBody RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already exists.");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername().trim());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole("USER");
+
         userRepository.save(user);
+        logger.info("New user registered: {}", user.getUsername());
+
         return "User registered securely!";
     }
 
