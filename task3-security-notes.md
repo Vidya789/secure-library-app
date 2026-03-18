@@ -85,9 +85,10 @@ The following runtime evidence is recommended for the report and presentation:
 3. Registration failure due to duplicate username
 4. Before: a normal user could still perform admin-only actions
 5. After: access is denied with 403 after fixing RBAC
-6. Admin successfully performing an admin action
-7. Safe error response for invalid or non-existing resources
-8. Console logs showing security-related events
+6. Before: still getting a 403 error after adimin logging in.
+7. After: Admin successfully performing an admin action
+8. Safe error response for invalid or non-existing resources
+9. Console logs showing security-related events
 
 ## Suggested Before / After Points for the Report
 
