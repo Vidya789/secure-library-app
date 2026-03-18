@@ -9,16 +9,18 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    background-image: url('./bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 body::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(255, 255, 255, 0.28);
     z-index: 0;
 }
 
@@ -35,11 +37,12 @@ body::before {
 .container {
     width: 92%;
     max-width: 1000px;
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.92);
     padding: 30px;
     border-radius: 16px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
     text-align: center;
+    backdrop-filter: blur(4px);
 }
 
 .app-title {
@@ -113,7 +116,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 16px;
-    background: white;
+    background: rgba(255, 255, 255, 0.96);
     border-radius: 10px;
     overflow: hidden;
 }

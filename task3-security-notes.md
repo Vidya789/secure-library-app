@@ -58,6 +58,39 @@ This document summarizes the security-related work completed for Task 3 in the S
 - Frontend credential storage was improved so that plain-text password storage is avoided.
 - This reduces unnecessary exposure of sensitive credentials on the client side.
 
+## SAST Validation
+
+Static Application Security Testing (SAST) was carried out with **SonarQube for IDE** in IntelliJ after the main security features had been implemented. The purpose of this step was to review the codebase for remaining secure coding issues and verify whether the implemented changes introduced any additional quality or security concerns.
+
+The first follow-up SonarQube scan still reported several issues across the codebase. These included a hard-coded password warning in `LibraryappApplication.java`, field injection warnings in controllers and services, duplicated literals such as `"ADMIN"` and `"error"`, and generic exception-handling concerns in `SecurityConfig.java`.
+
+Based on these findings, additional remediation work was performed. The most important change was the removal of the hard-coded administrator password from source code and replacement with an externally supplied value through configuration. This reduced the risk of credential exposure in the repository. Further review also highlighted maintainability-related issues, including constructor injection recommendations and repeated literals.
+
+The SAST activity was used as evidence that the project was not only functionally secured, but also reviewed from a secure coding perspective. It helped confirm that the key security changes were in place and that the most security-relevant remaining issue had been identified and addressed.
+
+## DAST Validation
+
+Dynamic Application Security Testing (DAST) was performed with **OWASP ZAP** against the locally deployed application at `http://localhost:8080` after the required security features were implemented.
+
+An earlier ZAP scan identified issues including:
+- **Weak Authentication Method**
+- **Cookie without SameSite Attribute**
+- **X-Content-Type-Options Header Missing**
+
+These findings were used to guide additional hardening in the Spring Security configuration. In response:
+- HTTP Basic authentication was removed and replaced with **form-based login**
+- Session cookie settings were improved by adding **SameSite** and **HttpOnly** protection
+- Additional browser-security response headers were reviewed as part of response hardening
+
+After the security configuration was updated and the application was restarted, a follow-up ZAP scan showed that the **Weak Authentication Method** alert and the **Cookie without SameSite Attribute** alert were no longer reported. This demonstrated that the authentication mechanism and session-cookie handling had been improved successfully.
+
+The final remaining alerts were mainly related to browser response-header hardening:
+- **Content Security Policy (CSP) Header Not Set**
+- **Missing Anti-clickjacking Header**
+- **X-Content-Type-Options Header Missing**
+
+These remaining items were lower-priority hardening recommendations and did not indicate a failure of the core security controls such as password handling, authentication flow, or RBAC.
+
 ## Main Files Updated
 The following files were updated or added as part of Task 3:
 
@@ -85,10 +118,14 @@ The following runtime evidence is recommended for the report and presentation:
 3. Registration failure due to duplicate username
 4. Before: a normal user could still perform admin-only actions
 5. After: access is denied with 403 after fixing RBAC
-6. Before: still getting a 403 error after adimin logging in.
+6. Before: still getting a 403 error after admin logging in
 7. After: Admin successfully performing an admin action
 8. Safe error response for invalid or non-existing resources
 9. Console logs showing security-related events
+10. SAST follow-up scan before remediation`
+11. SAST follow-up scan after targeted remediation`
+12. DAST scan before authentication/session hardening
+13. DAST scan after authentication/session hardening
 
 ## Suggested Before / After Points for the Report
 
@@ -101,6 +138,8 @@ The following runtime evidence is recommended for the report and presentation:
 - Role mapping between stored roles and granted authorities was not fully aligned.
 - Error responses could expose too much technical detail or return an overly generic internal error.
 - Security logging was limited.
+- Follow-up SAST still identified a hard-coded password issue and other secure-coding concerns.
+- Initial DAST identified weak authentication and insecure cookie behavior.
 
 ### After
 - Passwords are hashed before storage.
@@ -111,3 +150,5 @@ The following runtime evidence is recommended for the report and presentation:
 - Stored roles are correctly mapped to Spring Security authorities.
 - Errors return safer and cleaner messages, with clearer handling for known resource problems.
 - Important security actions are logged.
+- The hard-coded password issue identified during SAST review was removed from source code.
+- DAST no longer reported Weak Authentication Method or Cookie without SameSite Attribute after security configuration changes.

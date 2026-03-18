@@ -9,8 +9,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -27,6 +25,13 @@ public class SecurityConfig {
         try {
             http
                     .csrf(csrf -> csrf.disable())
+                    .headers(headers -> headers
+                            .contentTypeOptions(contentTypeOptions -> {})
+                            .frameOptions(frame -> frame.sameOrigin())
+                            .contentSecurityPolicy(csp -> csp
+                                    .policyDirectives("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;")
+                            )
+                    )
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers(
                                     "/",
@@ -34,8 +39,11 @@ public class SecurityConfig {
                                     "/login.html",
                                     "/register.html",
                                     "/books.html",
+                                    "/admin.html",
                                     "/style.css",
-                                    "/app.js"
+                                    "/app.js",
+                                    "/bg.png",
+                                    "/favicon.ico"
                             ).permitAll()
                             .requestMatchers("/auth/register").permitAll()
                             .requestMatchers(HttpMethod.GET, "/books").authenticated()
@@ -51,7 +59,17 @@ public class SecurityConfig {
                             .requestMatchers("/admin.html").hasRole(ROLE_ADMIN)
                             .anyRequest().authenticated()
                     )
-                    .httpBasic(withDefaults());
+                    .formLogin(form -> form
+                            .loginPage("/login.html")
+                            .loginProcessingUrl("/login")
+                            .defaultSuccessUrl("/books.html", true)
+                            .permitAll()
+                    )
+                    .logout(logout -> logout
+                            .logoutUrl("/logout")
+                            .logoutSuccessUrl("/login.html?logout")
+                            .permitAll()
+                    );
 
             return http.build();
         } catch (Exception ex) {
