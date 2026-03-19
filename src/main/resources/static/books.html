@@ -48,8 +48,7 @@
         </table>
 
         <div class="menu">
-            <a class="btn" href="index.html">Home</a>
-            <a class="btn" href="admin.html">Admin Dashboard</a>
+            <button class="btn" onclick="logout()">Logout</button>
         </div>
     </div>
 </div>
@@ -193,8 +192,14 @@
         }
     }
 
-    loadBooks();
-    loadMyRequests();
+    (async function initBooksPage() {
+        const user = await protectPage("USER");
+        if (!user) {
+            return;
+        }
+        loadBooks();
+        loadMyRequests();
+    })();
 </script>
 </body>
 </html>
