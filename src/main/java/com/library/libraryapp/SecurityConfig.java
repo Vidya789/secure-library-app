@@ -14,6 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_USER = "USER";
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -34,35 +35,36 @@ public class SecurityConfig {
                     )
                     .authorizeHttpRequests(auth -> auth
                             .requestMatchers(
-                                    "/",
-                                    "/index.html",
                                     "/login.html",
                                     "/register.html",
-                                    "/books.html",
-                                    "/admin.html",
                                     "/style.css",
                                     "/app.js",
                                     "/bg.png",
-                                    "/favicon.ico"
+                                    "/auth/register",
+                                    "/login",
+                                    "/error"
                             ).permitAll()
-                            .requestMatchers("/auth/register").permitAll()
-                            .requestMatchers(HttpMethod.GET, "/books").authenticated()
-                            .requestMatchers(HttpMethod.GET, "/books/search").authenticated()
-                            .requestMatchers(HttpMethod.POST, "/books").hasRole(ROLE_ADMIN)
-                            .requestMatchers(HttpMethod.PUT, "/books/**").hasRole(ROLE_ADMIN)
-                            .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole(ROLE_ADMIN)
-                            .requestMatchers(HttpMethod.GET, "/borrow/my").authenticated()
-                            .requestMatchers(HttpMethod.POST, "/borrow/*").authenticated()
-                            .requestMatchers(HttpMethod.GET, "/borrow/all").hasRole(ROLE_ADMIN)
-                            .requestMatchers(HttpMethod.PUT, "/borrow/*/approve").hasRole(ROLE_ADMIN)
-                            .requestMatchers(HttpMethod.PUT, "/borrow/*/reject").hasRole(ROLE_ADMIN)
-                            .requestMatchers("/admin.html").hasRole(ROLE_ADMIN)
+
+                            .requestMatchers("/admin.html").hasRole("ADMIN")
+                            .requestMatchers("/books.html").hasRole("USER")
+                            .requestMatchers("/auth/me").authenticated()
+
+                            .requestMatchers(HttpMethod.GET, "/books").hasAnyRole("USER", "ADMIN")
+                            .requestMatchers(HttpMethod.GET, "/books/**").hasAnyRole("USER", "ADMIN")
+                            .requestMatchers(HttpMethod.POST, "/books").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.PUT, "/books/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.DELETE, "/books/**").hasRole("ADMIN")
+
+                            .requestMatchers("/borrow/all").hasRole("ADMIN")
+                            .requestMatchers("/borrow/**").hasAnyRole("USER", "ADMIN")
+
                             .anyRequest().authenticated()
                     )
                     .formLogin(form -> form
                             .loginPage("/login.html")
                             .loginProcessingUrl("/login")
-                            .defaultSuccessUrl("/books.html", true)
+                            .defaultSuccessUrl("/index.html", true)
+                            .failureUrl("/login.html?error")
                             .permitAll()
                     )
                     .logout(logout -> logout

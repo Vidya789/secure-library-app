@@ -12,12 +12,12 @@
         <div class="app-title">Secure Library App</div>
         <div class="page-subtitle">User Login</div>
 
-        <form id="loginForm">
+        <form id="loginForm" method="post" action="javascript:void(0);">
             <label for="username">Username</label>
-            <input id="username" type="text" required minlength="3">
+            <input id="username" name="username" type="text" required minlength="3">
 
             <label for="password">Password</label>
-            <input id="password" type="password" required minlength="3">
+            <input id="password" name="password" type="password" required minlength="3">
 
             <button type="submit">Login</button>
         </form>
@@ -25,7 +25,6 @@
         <p id="message"></p>
 
         <div class="menu">
-            <a class="btn" href="index.html">Home</a>
             <a class="btn" href="register.html">Register</a>
         </div>
     </div>
@@ -33,7 +32,13 @@
 
 <script src="app.js"></script>
 <script>
-    document.getElementById("loginForm").addEventListener("submit", loginUser);
+    window.addEventListener("load", () => {
+        const form = document.getElementById("loginForm");
+        if (form) {
+            form.addEventListener("submit", loginUser);
+        }
+        initializeLoginPage();
+    });
 </script>
 </body>
 </html>

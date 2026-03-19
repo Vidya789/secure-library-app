@@ -7,8 +7,11 @@ import com.library.libraryapp.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -42,8 +45,18 @@ public class AuthController {
         return "User registered securely!";
     }
 
-    @PostMapping("/login")
-    public String login() {
-        return "User logged in successfully!";
+    @GetMapping("/me")
+    public Map<String, String> currentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            throw new BadRequestException("User is not authenticated.");
+        }
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new BadRequestException("Authenticated user not found."));
+
+        return Map.of(
+                "username", user.getUsername(),
+                "role", user.getRole()
+        );
     }
 }

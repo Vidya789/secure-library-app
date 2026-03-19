@@ -25,7 +25,6 @@
         <p id="message"></p>
 
         <div class="menu">
-            <a class="btn" href="index.html">Home</a>
             <a class="btn" href="login.html">Login</a>
         </div>
     </div>
@@ -33,7 +32,10 @@
 
 <script src="app.js"></script>
 <script>
-    document.getElementById("registerForm").addEventListener("submit", registerUser);
+    window.addEventListener("load", () => {
+        document.getElementById("registerForm").addEventListener("submit", registerUser);
+    });
 </script>
 </body>
 </html>
+

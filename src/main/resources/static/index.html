@@ -13,15 +13,17 @@
         <div class="page-subtitle">Mini Library Management Web Application</div>
 
         <h2>Welcome</h2>
-        <p>Access the system using the options below.</p>
+        <p id="welcomeMessage">Access the system using the options below.</p>
 
-        <div class="menu">
-            <a class="btn" href="register.html">Register</a>
-            <a class="btn" href="login.html">Login</a>
-            <a class="btn" href="books.html">Books</a>
-            <a class="btn" href="admin.html">Admin Dashboard</a>
-        </div>
+        <div id="homeMenu" class="menu"></div>
     </div>
 </div>
+
+<script src="app.js"></script>
+<script>
+    window.addEventListener("load", () => {
+        renderHomeMenu();
+    });
+</script>
 </body>
 </html>

@@ -1,24 +1,71 @@
-function getStoredUsername() {
-    return sessionStorage.getItem("username");
-}
+async function parseResponseError(response, fallbackMessage) {
+    const contentType = response.headers.get("content-type") || "";
 
-function getStoredPassword() {
-    return sessionStorage.getItem("password");
+    try {
+        if (contentType.includes("application/json")) {
+            const data = await response.json();
+            if (typeof data === "string") {
+                return data;
+            }
+            if (data.error) {
+                return data.error;
+            }
+            const fieldErrors = Object.values(data || {}).filter(Boolean);
+            if (fieldErrors.length > 0) {
+                return fieldErrors.join(" ");
+            }
+        } else {
+            const text = await response.text();
+            if (text && text.trim()) {
+                return text;
+            }
+        }
+    } catch (_) {
+        // ignore parse errors and fall back
+    }
+
+    return fallbackMessage;
 }
 
 function getAuthHeaders() {
-    const username = getStoredUsername();
-    const password = getStoredPassword();
-
-    const headers = {
+    return {
         "Content-Type": "application/json"
     };
+}
 
-    if (username && password) {
-        headers["Authorization"] = "Basic " + btoa(username + ":" + password);
+async function getCurrentUser() {
+    const response = await fetch("/auth/me", {
+        method: "GET",
+        credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+        throw new Error("Not authenticated");
     }
 
-    return headers;
+    return response.json();
+}
+
+function showMessage(messageElement, text, color = "#b91c1c") {
+    if (!messageElement) {
+        return;
+    }
+    messageElement.style.color = color;
+    messageElement.textContent = text;
+}
+
+async function initializeLoginPage() {
+    const message = document.getElementById("message");
+    if (!message) {
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("error")) {
+        showMessage(message, "Invalid username or password.");
+    } else if (params.has("logout")) {
+        showMessage(message, "Logged out successfully.", "green");
+    }
 }
 
 async function loginUser(event) {
@@ -28,32 +75,40 @@ async function loginUser(event) {
     const password = document.getElementById("password").value;
     const message = document.getElementById("message");
 
-    message.textContent = "";
+    showMessage(message, "", "#111827");
+
+    if (!username || !password) {
+        showMessage(message, "Please enter username and password.");
+        return;
+    }
 
     try {
-        const response = await fetch("/books", {
-            method: "GET",
+        const formBody = new URLSearchParams();
+        formBody.append("username", username);
+        formBody.append("password", password);
+
+        await fetch("/login", {
+            method: "POST",
             headers: {
-                "Authorization": "Basic " + btoa(username + ":" + password)
-            }
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: formBody.toString(),
+            credentials: "same-origin"
         });
 
-        if (!response.ok) {
-            throw new Error("Invalid username or password.");
+        const meResponse = await fetch("/auth/me", {
+            method: "GET",
+            credentials: "same-origin"
+        });
+
+        if (!meResponse.ok) {
+            window.location.href = "login.html?error";
+            return;
         }
 
-        sessionStorage.setItem("username", username);
-        sessionStorage.setItem("password", password);
-
-        message.style.color = "green";
-        message.textContent = "Login successful.";
-
-        setTimeout(() => {
-            window.location.href = "books.html";
-        }, 700);
+        window.location.href = "index.html";
     } catch (error) {
-        message.style.color = "#b91c1c";
-        message.textContent = error.message;
+        showMessage(message, "Login failed.");
     }
 }
 
@@ -64,17 +119,15 @@ async function registerUser(event) {
     const password = document.getElementById("password").value;
     const message = document.getElementById("message");
 
-    message.textContent = "";
+    showMessage(message, "", "#111827");
 
     if (username.length < 3) {
-        message.style.color = "#b91c1c";
-        message.textContent = "Username must be at least 3 characters.";
+        showMessage(message, "Username must be at least 3 characters.");
         return;
     }
 
     if (password.length < 6) {
-        message.style.color = "#b91c1c";
-        message.textContent = "Password must be at least 6 characters.";
+        showMessage(message, "Password must be at least 6 characters.");
         return;
     }
 
@@ -85,34 +138,86 @@ async function registerUser(event) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                username: username,
-                password: password,
+                username,
+                password,
                 role: "USER"
-            })
+            }),
+            credentials: "same-origin"
         });
 
-        const text = await response.text();
-
         if (!response.ok) {
-            throw new Error(text || "Registration failed.");
+            const errorMessage = await parseResponseError(response, "Registration failed.");
+            throw new Error(errorMessage);
         }
 
-        message.style.color = "green";
-        message.textContent = text || "Registration successful.";
+        const successText = await response.text();
+        showMessage(message, successText || "Registration successful.", "green");
 
         setTimeout(() => {
             window.location.href = "login.html";
         }, 900);
     } catch (error) {
-        message.style.color = "#b91c1c";
-        message.textContent = error.message;
+        showMessage(message, error.message || "Registration failed.");
     }
 }
 
-function logout() {
-    sessionStorage.removeItem("username");
-    sessionStorage.removeItem("password");
-    window.location.href = "login.html";
+async function logout() {
+    try {
+        await fetch("/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } finally {
+        window.location.href = "login.html?logout";
+    }
+}
+
+async function protectPage(requiredRole) {
+    try {
+        const user = await getCurrentUser();
+        if (requiredRole && user.role !== requiredRole) {
+            window.location.href = "index.html";
+            return null;
+        }
+        return user;
+    } catch (_) {
+        window.location.href = "login.html";
+        return null;
+    }
+}
+
+async function renderHomeMenu() {
+    const homeMenu = document.getElementById("homeMenu");
+    const welcomeMessage = document.getElementById("welcomeMessage");
+
+    if (!homeMenu) {
+        return;
+    }
+
+    homeMenu.innerHTML = "";
+
+    try {
+        const user = await getCurrentUser();
+        if (welcomeMessage) {
+            welcomeMessage.textContent = `Welcome, ${user.username}.`;
+        }
+
+        if (user.role === "USER") {
+            homeMenu.innerHTML = `
+                <a class="btn" href="books.html">Books</a>
+                <button class="btn" onclick="logout()">Logout</button>
+            `;
+        } else if (user.role === "ADMIN") {
+            homeMenu.innerHTML = `
+                <a class="btn" href="admin.html">Admin Dashboard</a>
+                <button class="btn" onclick="logout()">Logout</button>
+            `;
+        } else {
+            homeMenu.innerHTML = `<button class="btn" onclick="logout()">Logout</button>`;
+        }
+    } catch (_) {
+        window.location.href = "login.html";
+    }
 }
 
 function escapeHtml(value) {
