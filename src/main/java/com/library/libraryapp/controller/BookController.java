@@ -1,8 +1,13 @@
 package com.library.libraryapp.controller;
 
+import com.library.libraryapp.exception.BadRequestException;
+import com.library.libraryapp.exception.ResourceNotFoundException;
 import com.library.libraryapp.model.Book;
 import com.library.libraryapp.repository.BookRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,8 +16,13 @@ import java.util.List;
 @RequestMapping("/books")
 public class BookController {
 
-    @Autowired
-    private BookRepository bookRepository;
+    private static final Logger logger = LoggerFactory.getLogger(BookController.class);
+
+    private final BookRepository bookRepository;
+
+    public BookController(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
 
     @GetMapping
     public List<Book> getBooks() {
@@ -20,35 +30,42 @@ public class BookController {
     }
 
     @GetMapping("/search")
-    public List<Book> searchBooks(@RequestParam String keyword) {
-        return bookRepository
-                .findByTitleContainingIgnoreCaseOrCategoryContainingIgnoreCase(keyword, keyword);
+    public List<Book> searchBooks(@RequestParam @Size(min = 1, max = 80) String keyword) {
+        String trimmed = keyword.trim();
+        if (trimmed.isEmpty()) {
+            throw new BadRequestException("Keyword cannot be blank.");
+        }
+
+        return bookRepository.findByTitleContainingIgnoreCaseOrCategoryContainingIgnoreCase(trimmed, trimmed);
     }
 
     @PostMapping
-    public Book addBook(@RequestBody Book book) {
+    public Book addBook(@Valid @RequestBody Book book) {
+        logger.info("Admin added book: {}", book.getTitle());
         return bookRepository.save(book);
     }
 
     @PutMapping("/{id}")
-    public Book updateBook(@PathVariable Long id, @RequestBody Book updatedBook) {
+    public Book updateBook(@PathVariable Long id, @Valid @RequestBody Book updatedBook) {
         Book book = bookRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Book not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
-        book.setTitle(updatedBook.getTitle());
-        book.setAuthor(updatedBook.getAuthor());
-        book.setCategory(updatedBook.getCategory());
+        book.setTitle(updatedBook.getTitle().trim());
+        book.setAuthor(updatedBook.getAuthor().trim());
+        book.setCategory(updatedBook.getCategory().trim());
 
+        logger.info("Admin updated book with id {}", id);
         return bookRepository.save(book);
     }
 
     @DeleteMapping("/{id}")
     public String deleteBook(@PathVariable Long id) {
         if (!bookRepository.existsById(id)) {
-            throw new RuntimeException("Book not found");
+            throw new ResourceNotFoundException("Book not found");
         }
 
         bookRepository.deleteById(id);
+        logger.info("Admin deleted book with id {}", id);
         return "Book deleted successfully!";
     }
 }
