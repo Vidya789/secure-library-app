@@ -3,14 +3,25 @@
   "summary": {
     "title": "ESILV-SSDLC-Secure Library App",
     "owner": "Tengzhe ZHANG",
-    "description": "",
+    "description": "The Secure Library App is a web-based library management system that allows users to register, log in, browse books, and perform borrowing-related actions. For this threat model, the scope is limited to the login process. The model includes the user, the login page, the authentication component, and the user database. The objective is to identify security threats affecting authentication, credential handling, access control, and database interaction.",
     "id": 0
   },
   "detail": {
     "contributors": [],
-    "diagrams": [],
-    "diagramTop": 0,
-    "reviewer": "",
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "New STRIDE diagram",
+        "diagramType": "STRIDE",
+        "placeholder": "New STRIDE diagram description",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.0",
+        "cells": [],
+        "description": "Threat model for the Secure Library App login process, including user credential input, authentication processing, and database verification."
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "Self-review",
     "threatTop": 0
   }
 }
